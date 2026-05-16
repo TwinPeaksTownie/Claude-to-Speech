@@ -6,9 +6,9 @@ argument-hint: <voice-key>
 Switching TTS voice to: $ARGUMENTS
 
 Available voices:
+- Claude (uY96J30mUhYUIymmD5cu) [default]
 - LAURA (qEwI395unGwWV1dn3Y65)
-- robo-LAURA (43WCRcu4Axd2KIaxt4M7) [default]
-- Claude (uY96J30mUhYUIymmD5cu)
+- robo-LAURA (43WCRcu4Axd2KIaxt4M7)
 
 ```bash
 VOICE_KEY="$ARGUMENTS"

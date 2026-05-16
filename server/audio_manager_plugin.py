@@ -20,23 +20,26 @@ except ImportError:
     ElevenLabs = None  # Will raise at runtime if used without install
 
 # ====== CONFIGURATION SECTION ======
+DEFAULT_MODEL = "eleven_flash_v2_5"
+DEFAULT_VOICE = "L.A.U.R.A."
+
 try:
     from config.tts_config import ELEVENLABS_API_KEY, ACTIVE_VOICE, VOICES_DATA
     # Access voices nested under "voices" key
     voices = VOICES_DATA.get("voices", {})
     ELEVENLABS_VOICE = voices.get(ACTIVE_VOICE, {}).get("name", ACTIVE_VOICE)
-    ELEVENLABS_MODEL = voices.get(ACTIVE_VOICE, {}).get("model", "eleven_flash_v2_5")
+    ELEVENLABS_MODEL = voices.get(ACTIVE_VOICE, {}).get("model", DEFAULT_MODEL)
     print(f"✅ Loaded from tts_config: Voice={ELEVENLABS_VOICE}, Model={ELEVENLABS_MODEL}")
 except ImportError:
     print("⚠️ Failed to import from config.tts_config. Using environment variables.")
     ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
-    ELEVENLABS_VOICE = os.environ.get("ELEVENLABS_VOICE", "L.A.U.R.A.")
-    ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_flash_v2_5")
+    ELEVENLABS_VOICE = os.environ.get("ELEVENLABS_VOICE", DEFAULT_VOICE)
+    ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", DEFAULT_MODEL)
 except Exception as e:
     print(f"⚠️ Config error: {e}. Using environment variables.")
     ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
-    ELEVENLABS_VOICE = os.environ.get("ELEVENLABS_VOICE", "L.A.U.R.A.")
-    ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_flash_v2_5")
+    ELEVENLABS_VOICE = os.environ.get("ELEVENLABS_VOICE", DEFAULT_VOICE)
+    ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", DEFAULT_MODEL)
 
 if not ELEVENLABS_API_KEY:
     print("❌ CRITICAL: ElevenLabs API key not found!")

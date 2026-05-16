@@ -62,36 +62,43 @@ def get_voice_id(voice_input: str) -> str:
             return get_voice_id(env_voice)  # Recursive to handle names
         return VOICE_MAPPINGS["default"]
 
-    # Clean input
-    voice_input = voice_input.lower().strip()
+    voice_input = voice_input.strip()
 
-    # Check if it's a known mapping
-    if voice_input in VOICE_MAPPINGS:
-        return VOICE_MAPPINGS[voice_input]
-
-    # Check if it looks like a voice ID (20+ alphanumeric chars)
+    # ElevenLabs voice IDs are case-sensitive — check the raw form before
+    # lowercasing for mapping lookup.
     if len(voice_input) >= 20 and voice_input.replace("_", "").isalnum():
-        return voice_input  # Assume it's a raw voice ID
+        return voice_input
 
-    # Try partial matching
+    voice_key = voice_input.lower()
+
+    if voice_key in VOICE_MAPPINGS:
+        return VOICE_MAPPINGS[voice_key]
+
     for name, voice_id in VOICE_MAPPINGS.items():
-        if voice_input in name or name in voice_input:
+        if voice_key in name or name in voice_key:
             return voice_id
 
     # Fallback to default
     print(f"⚠️  Unknown voice '{voice_input}', using default")
     return VOICE_MAPPINGS["default"]
 
-# Configuration - can be overridden by config.py or environment variables
-try:
-    from config import ELEVENLABS_API_KEY, VOICE_ID, SERVER_URL, ELEVENLABS_MODEL
-except ImportError:
-    ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '')
-    # Use the mapping function for voice selection
-    raw_voice = os.environ.get('CLAUDE_VOICE_ID', 'claude')
-    VOICE_ID = get_voice_id(raw_voice)
-    SERVER_URL = os.environ.get('TTS_SERVER_URL', '')  # Empty = direct API mode
-    ELEVENLABS_MODEL = os.environ.get('ELEVENLABS_MODEL', 'eleven_flash_v2_5')  # Fast model
+# Configuration - driven by .env / environment variables, with legacy fallback
+# for installations that still use scripts/config.py from before the migration.
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '')
+VOICE_ID = get_voice_id(os.environ.get('CLAUDE_VOICE_ID', 'claude'))
+SERVER_URL = os.environ.get('TTS_SERVER_URL', '')  # Empty = direct API mode
+ELEVENLABS_MODEL = os.environ.get('ELEVENLABS_MODEL', 'eleven_flash_v2_5')
+
+if not ELEVENLABS_API_KEY:
+    try:
+        from config import ELEVENLABS_API_KEY as _key, VOICE_ID as _vid, \
+            SERVER_URL as _url, ELEVENLABS_MODEL as _model
+        ELEVENLABS_API_KEY = _key
+        VOICE_ID = _vid
+        SERVER_URL = _url
+        ELEVENLABS_MODEL = _model
+    except ImportError:
+        pass
 
 # TTS Settings
 DEFAULT_TIMEOUT = 10.0
@@ -143,8 +150,10 @@ def clean_text_for_speech(text: str) -> str:
     # Handle dots between text (e.g., "file.txt" -> "file dot txt")
     text = re.sub(r'(\w)\.(\w)', r'\1 dot \2', text)
 
-    # Remove problematic symbols while keeping natural punctuation
-    symbols_to_remove = r'[\\|}{[\]/%*#@$^&+=<>~`"()]'
+    # Remove problematic symbols while keeping natural punctuation.
+    # Square brackets are intentionally preserved so ElevenLabs audio tags
+    # (e.g. [excited], [whispers]) pass through for models that support them.
+    symbols_to_remove = r'[\\|}{/%*#@$^&+=<>~`"()]'
     text = re.sub(symbols_to_remove, ' ', text)
 
     # Handle hyphens intelligently

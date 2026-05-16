@@ -53,7 +53,11 @@ Claude-to-Speech is a plugin that enables automatic voice output for Claude Code
 
 ## Configuration
 
-Create a `.env` file in the plugin root directory:
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
 
 ```bash
 # REQUIRED: ElevenLabs API Key
@@ -65,7 +69,12 @@ ELEVENLABS_API_KEY=your_api_key_here
 CLAUDE_VOICE_ID=claude
 
 # ElevenLabs Model (optional - defaults to eleven_flash_v2_5)
-# Options: eleven_flash_v2_5 (fastest), eleven_turbo_v2, eleven_multilingual_v2
+# Options:
+#   eleven_flash_v2_5       - fastest, default
+#   eleven_turbo_v2         - balanced
+#   eleven_multilingual_v2  - multilingual
+#   eleven_v3               - latest; supports inline audio tags
+#                             like [excited], [whispers], [laughs]
 ELEVENLABS_MODEL=eleven_flash_v2_5
 
 # TTS Server URL (optional - leave empty for direct API mode)
@@ -75,6 +84,9 @@ TTS_SERVER_URL=
 # Debug mode (optional - set to 1 to enable debug logging)
 DEBUG=0
 ```
+
+Both the plugin scripts and the optional TTS server read from the same
+`.env` file, so there's only one place to configure credentials.
 
 ### Voice Options
 
@@ -215,12 +227,17 @@ You hear: *"Found the bug in the auth handler. It's a missing null check on line
 
 ### How the Stop Hook Works
 
-1. Hook receives JSON input with `transcript_path`
-2. Reads the last message from the Claude Code transcript file
-3. Extracts the `message.content[0].text` field (Claude's response)
-4. Uses regex to find `<!-- TTS: "..." -->` markers (handles escaped HTML)
-5. Calls `claude_speak.py` with the extracted text
-6. Audio is played via system audio player
+1. Hook receives JSON input from Claude Code on stdin.
+2. Uses `last_assistant_message` when present, otherwise falls back to reading
+   the last entry from `transcript_path` for older Claude Code versions.
+3. Extracts the assistant's response text.
+4. Uses regex to find `<!-- TTS: "..." -->` markers (handles escaped HTML).
+5. Calls `claude_speak.py` with the extracted text.
+6. Audio is played via the system audio player.
+
+The hook prefers a plugin-local virtualenv (`.venv/` or `venv/`) and falls
+back to system `python3`, so dependencies installed via `setup.sh` are picked
+up automatically.
 
 ### Audio Playback
 
@@ -286,17 +303,17 @@ tail -50 /tmp/claude_stop_hook.log
 ```
 claude-to-speech/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin metadata
-├── commands/
-│   └── speak.md             # /speak slash command
+│   └── plugin.json            # Plugin metadata
+├── commands/                  # Slash commands
 ├── hooks/
-│   ├── hooks.json           # Hook registration
-│   └── stop.sh              # Stop hook script
+│   ├── hooks.json             # Hook registration
+│   └── stop.sh                # Stop hook script
 ├── scripts/
-│   └── claude_speak.py      # TTS interface
-├── .env.example             # Example configuration
-├── .gitignore               # Excludes .env from git
-└── README.md                # This file
+│   └── claude_speak.py        # TTS interface
+├── server/                    # Optional local TTS server
+├── .env.example               # Environment variable template
+├── .gitignore                 # Excludes secrets/artifacts from git
+└── README.md                  # This file
 ```
 
 ### Testing Changes

@@ -32,9 +32,9 @@ cd ../..  # Back to claude-to-speech root
 python3 server/tts_server.py
 ```
 
-You should see:
+You should see output similar to:
 ```
-✅ Loaded from tts_config: Voice=43WCRcu4Axd2KIaxt4M7, Model=eleven_flash_v2_5
+✅ Loaded from tts_config: Voice=<voice_id>, Model=eleven_flash_v2_5
 🎵 Pygame audio mixer initialized successfully!
 Starting Claude-to-Speech TTS Server on http://0.0.0.0:5001
 ```
@@ -86,11 +86,9 @@ claude-to-speech/
 │   ├── smart_streaming_processor.py  # Text processing
 │   └── config/
 │       ├── voices.json       # Voice definitions
-│       ├── tts_config.py     # Config loader
-│       └── secret.example.py # API key template
+│       └── tts_config.py     # Config loader (reads .env)
 ├── scripts/                   # Plugin scripts
-│   ├── claude_speak.py       # TTS interface
-│   └── config.py             # Plugin config
+│   └── claude_speak.py       # TTS interface
 ├── commands/
 │   └── speak.md              # /speak command
 ├── hooks/
@@ -157,16 +155,20 @@ Edit `server/config/voices.json`:
 
 ```json
 {
-  "active_voice": "LAURA",
+  "active_voice": "Claude",
   "voices": {
-    "LAURA": {
-      "name": "qEwI395unGwWV1dn3Y65",
+    "Claude": {
+      "name": "uY96J30mUhYUIymmD5cu",
       "model": "eleven_flash_v2_5",
-      "persona": "laura"
+      "persona": "claude"
     }
   }
 }
 ```
+
+Supported models include `eleven_flash_v2_5` (fastest, default),
+`eleven_turbo_v2`, `eleven_multilingual_v2`, and `eleven_v3` (latest; supports
+inline audio tags such as `[excited]`, `[whispers]`, `[laughs]`).
 
 Reload without restarting:
 ```bash
@@ -203,9 +205,9 @@ ipconfig                  # Windows
 
 **Connect from another device:**
 
-Edit `scripts/config.py` on the client:
-```python
-SERVER_URL = "http://192.168.1.100:5001/tts"  # Your server IP
+Edit `.env` on the client:
+```bash
+TTS_SERVER_URL=http://192.168.1.100:5001/tts  # Your server IP
 ```
 
 ---
@@ -284,9 +286,9 @@ lsof -i :5001
 kill -9 <PID>
 ```
 
-**Error: `ELEVENLABS_API_KEY must be set`**
-- Check `server/config/secret.py` exists
-- Verify API key is correct
+**Error: `ELEVENLABS_API_KEY is not set`**
+- Check `.env` exists in the project root
+- Verify the key value is correct (and not still the placeholder)
 
 **Error: `No module named 'quart'`**
 ```bash
@@ -328,12 +330,12 @@ chmod +x hooks/stop.sh
 
 **Verify plugin config:**
 ```bash
-cat scripts/config.py
+cat .env
 ```
 
-Should have:
-```python
-SERVER_URL = "http://localhost:5001/tts"
+Should have (uncommented):
+```bash
+TTS_SERVER_URL=http://localhost:5001/tts
 ```
 
 ---
@@ -388,7 +390,7 @@ pip install -r requirements.txt --upgrade
 - Plugin hook: `/tmp/claude_stop_hook.log`
 
 **Common issues:**
-- Wrong API key → Check `server/config/secret.py`
+- Wrong API key → Check `.env`
 - Port in use → Kill existing server
 - No audio → Check pygame and system audio
 - Plugin not firing → Restart Claude Code, check hooks
