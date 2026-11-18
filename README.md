@@ -34,7 +34,7 @@ Claude-to-Speech is a plugin that enables automatic voice output for Claude Code
    ```bash
    mkdir -p ~/.claude/plugins/repos
    cd ~/.claude/plugins/repos
-   git clone https://github.com/yourusername/claude-to-speech.git
+   git clone https://github.com/TwinPeaksTownie/Claude-to-Speech.git
    ```
 3. Install the plugin:
    ```bash
